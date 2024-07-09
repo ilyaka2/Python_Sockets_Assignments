@@ -1,0 +1,21 @@
+import socket
+
+UDP_IP= '0.0.0.0'
+UDP_PORT= 9999
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+sock.bind((UDP_IP, UDP_PORT))
+names = {}
+while True:
+    data, addr = sock.recvfrom(1024)
+    text = data.decode()
+    if len(text.split()) == 1:
+        names[text] = addr
+    else:
+        splited_Text = text.split()
+        if splited_Text[0] in names:
+            send_Text = ' '.join(splited_Text[1:])
+            send_Addres = names[splited_Text[0]]
+            sock.sendto(send_Text.encode(), send_Addres)
+        else:
+            sock.sendto('no such user'.encode(), addr)
