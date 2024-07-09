@@ -1,0 +1,67 @@
+import socket
+import threading
+
+ports = [5000, 5001, 5002, 5003, 5004]
+
+def start_server(port):
+    def handle_client(client_socket):
+        request = client_socket.recv(1024).decode()
+        print(f"[Server {port}] Received: {request}")
+        if request == "hello":
+            client_socket.send("world".encode())
+        client_socket.close()
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+
+
+    try:
+        server.bind(("127.0.0.1", port))
+    except socket.error as e:
+        if e.errno == socket.errno.EADDRINUSE:
+            print(f"[Server {port}] Port {port} is already in use.")
+            return start_run()
+        else:
+            print(f"[Server {port}] Failed to bind to port {port}: {e}")
+            return
+
+    connect_to_servers(port)
+    server.listen(1)
+    print(f"[Server {port}] Listening on port {port}")
+
+    while True:
+        client, addr = server.accept()
+        print(f"[Server {port}] Accepted connection from {addr}")
+        client_handler = threading.Thread(target=handle_client, args=(client,))
+        client_handler.start()
+
+def connect_to_servers(current_port):
+    for port in ports:
+        if port != current_port:
+            try:
+                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client.connect(("127.0.0.1", port))
+                client.send("hello".encode())
+                response = client.recv(1024).decode()
+                print(f"[Server {current_port}] Response from server on port {port}: {response}")
+                client.close()
+            except ConnectionRefusedError:
+                print(f"[Server {current_port}] Could not connect to server on port {port}")
+
+
+
+def start_run():
+    print("Choose a port from the list: 0-4")
+    for i, port in enumerate(ports):
+        print(f"{i}: {port}")
+
+    choice = int(input("Enter your choice (0-4): "))
+    if choice < 0 or choice > 4:
+        print("Invalid choice. Please try again.")
+
+    chosen_port = ports[choice]
+
+    server_thread = threading.Thread(target=start_server, args=(chosen_port,))
+    server_thread.start()
+
+start_run()
